@@ -167,7 +167,7 @@ export default class App extends Component<Props, State> {
               this.player.speed = 1.0;
             }
           }
-        })
+        });
         this.player.looping = this.state.loopButtonStatus;
       }
 
@@ -197,44 +197,6 @@ export default class App extends Component<Props, State> {
     });
 
     this._updateState();
-  }
-
-  _toggleRecord() {
-    if (this.player) {
-      this.player.destroy();
-    }
-
-    let recordAudioRequest;
-    if (Platform.OS == 'android') {
-      recordAudioRequest = this._requestRecordAudioPermission();
-    } else {
-      recordAudioRequest = new Promise(function (resolve, reject) {
-        resolve(true);
-      });
-    }
-
-    recordAudioRequest.then(hasPermission => {
-      if (!hasPermission) {
-        this.setState({
-          error: 'Record Audio Permission was denied',
-        });
-        return;
-      }
-
-      this.recorder.toggleRecord((err, stopped) => {
-        if (err) {
-          this.setState({
-            error: err.message,
-          });
-        }
-        if (stopped) {
-          this._reloadPlayer();
-          this._reloadRecorder();
-        }
-
-        this._updateState();
-      });
-    });
   }
 
   async _requestRecordAudioPermission() {
@@ -271,6 +233,7 @@ export default class App extends Component<Props, State> {
   }
 
   render() {
+    console.log('this player ', this.player);
     return (
       <SafeAreaView>
         <View>
@@ -301,16 +264,6 @@ export default class App extends Component<Props, State> {
             disabled={this.state.playButtonDisabled}
             onValueChange={percentage => this._seek(percentage)}
             value={this.state.progress}
-          />
-        </View>
-        <View>
-          <Text style={styles.title}>Recording</Text>
-        </View>
-        <View>
-          <Button
-            title={this.state.recordButton}
-            disabled={this.state.recordButtonDisabled}
-            onPress={() => this._toggleRecord()}
           />
         </View>
         <View>
