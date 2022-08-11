@@ -62,7 +62,7 @@ export default class App extends Component<Props, State> {
     };
   }
 
-  componentWillMount() {
+  UNSAFE_componentWillMount() {
     this.player = null;
     this.recorder = null;
     this.lastSeek = 0;
@@ -141,13 +141,33 @@ export default class App extends Component<Props, State> {
       this.player.destroy();
     }
 
-    this.player = new Player(filename, {
-      autoDestroy: false,
-    }).prepare(err => {
+    this.player = new Player(
+      'https://consumer-static-assets.stg.ableto.com/meditations/27_calm_breathe.mp3',
+      {
+        autoDestroy: false,
+        continuesToPlayInBackground: false,
+      },
+    );
+    this.player.looping = true;
+
+    let isAndroid = Platform.OS === 'android';
+    if (isAndroid) {
+      this.player.speed = 0.0;
+    }
+    this.player.prepare(err => {
       if (err) {
         console.log('error at _reloadPlayer():');
         console.log(err);
-      } else {
+      } else if (this.player) {
+        this.player.play((error) => {
+          if (error) {
+            console.log(this.TAG, 'playback error', error);
+          } else {
+            if (isAndroid && this.player) {
+              this.player.speed = 1.0;
+            }
+          }
+        })
         this.player.looping = this.state.loopButtonStatus;
       }
 
@@ -259,7 +279,7 @@ export default class App extends Component<Props, State> {
         <View>
           <Button
             title={this.state.playPauseButton}
-            disabled={this.state.playButtonDisabled}
+            // disabled={this.state.playButtonDisabled}
             onPress={() => this._playPause()}
           />
           <Button

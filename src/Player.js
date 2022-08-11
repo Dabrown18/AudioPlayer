@@ -146,7 +146,7 @@ class Player extends EventEmitter {
     });
 
     // Set initial values for player options
-    tasks.push((next) => {
+    tasks.push(next => {
       RCTAudioPlayer.set(
         this._playerId,
         {
