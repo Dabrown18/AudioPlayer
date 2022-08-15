@@ -14,6 +14,7 @@ import filter from 'lodash/filter';
 import identity from 'lodash/identity';
 import last from 'lodash/last';
 import noop from 'lodash/noop';
+import RNFetchBlob from "rn-fetch-blob";
 
 const RCTAudioPlayer = NativeModules.AudioPlayer;
 
@@ -138,9 +139,31 @@ class Player extends EventEmitter {
   prepare(callback = noop) {
     this._updateState(null, MediaStates.PREPARING);
 
+    let isAndroid = Platform.OS === 'android';
+    if (isAndroid) {
+      const { config, fs } = RNFetchBlob
+      let options = {
+        fileCache: true,
+        appendExt: "mp3"
+      }
+
+      config(options).fetch('GET', this._path).then((res) => {
+        // Prepare player
+      
+        this._path = res.path();
+        this._prepareInternal(callback);
+
+    });
+  }else{
+    this._prepareInternal(callback);
+  }
+
+    return this;
+  }
+
+  _prepareInternal(callback = noop){
     const tasks = [];
 
-    // Prepare player
     tasks.push((next) => {
       RCTAudioPlayer.prepare(this._playerId, this._path, this._options, next);
     });
@@ -164,11 +187,13 @@ class Player extends EventEmitter {
       this._updateState(err, MediaStates.PREPARED, results);
       callback(err);
     });
-
-    return this;
   }
 
   play(callback = noop) {
+
+    if(this._state === MediaStates.PREPARING){
+        return this;
+    }
     const tasks = [];
 
     // Make sure player is prepared
@@ -192,6 +217,9 @@ class Player extends EventEmitter {
   }
 
   pause(callback = noop) {
+    if(this._state === MediaStates.PREPARING){
+        return this;
+    }
     RCTAudioPlayer.pause(this._playerId, (err, results) => {
       // Android emits a pause event on the native side
       if (Platform.OS === 'ios') {
@@ -204,6 +232,9 @@ class Player extends EventEmitter {
   }
 
   playPause(callback = noop) {
+    if(this._state == MediaStates.PREPARING){
+        return this;
+    }
     if (this._state === MediaStates.PLAYING) {
       this.pause(err => {
         callback(err, true);
@@ -234,6 +265,9 @@ class Player extends EventEmitter {
 
   seek(position = 0, callback = noop) {
     // Store old state, but not if it was already SEEKING
+    if(this._state == MediaStates.PREPARING){
+        return;
+    }
     if (this._state != MediaStates.SEEKING) {
       this._preSeekState = this._state;
     }

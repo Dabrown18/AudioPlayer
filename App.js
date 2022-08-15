@@ -233,7 +233,7 @@ export default class App extends Component<Props, State> {
   }
 
   render() {
-    console.log('this player ', this.player);
+ //   console.log('this player ', this.player);
     return (
       <SafeAreaView>
         <View>
